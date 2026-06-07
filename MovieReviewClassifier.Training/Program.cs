@@ -15,13 +15,6 @@ namespace Genova.MovieReviewClassifier.Training;
 /// </summary>
 public static class Program
 {
-    private const string SolutionDirectory =
-        @"C:\Git\Genova.MovieReviewClassifier\";
-    private const string InputDirectory =
-       SolutionDirectory + @"MovieReviewClassifier.Training\Input";
-    private const string OutputFilePath =
-        SolutionDirectory + @"MovieReviewClassifier\Data\" + RatingClassifier.CentroidsFileName;
-
     private static readonly string[] RatingFiles =
     {
         "1-star.txt",
@@ -41,6 +34,14 @@ public static class Program
     {
         try
         {
+            string solutionFolder = FindSolutionFolder();
+            string inputDirectory = Path.Combine(solutionFolder, "MovieReviewClassifier.Training", "Input");
+            string outputFilePath = Path.Combine(
+                solutionFolder,
+                "MovieReviewClassifier",
+                "Data",
+                RatingClassifier.CentroidsFileName);
+
             Console.WriteLine("Genova.MovieReviewClassifier.Training");
             Console.WriteLine("Building movie review rating centroids...");
             Console.WriteLine();
@@ -53,7 +54,7 @@ public static class Program
             for (int rating = 1; rating <= 5; rating++)
             {
                 string fileName = RatingFiles[rating - 1];
-                string path = Path.Combine(InputDirectory, fileName);
+                string path = Path.Combine(inputDirectory, fileName);
 
                 Console.WriteLine($"Loading reviews for rating {rating}: {path}");
 
@@ -112,7 +113,7 @@ public static class Program
             }
 
             // Create output directory if needed
-            string? outputDir = Path.GetDirectoryName(OutputFilePath);
+            string? outputDir = Path.GetDirectoryName(outputFilePath);
             if (!string.IsNullOrEmpty(outputDir))
             {
                 Directory.CreateDirectory(outputDir);
@@ -131,9 +132,9 @@ public static class Program
             };
 
             string json = JsonSerializer.Serialize(index, opts);
-            File.WriteAllText(OutputFilePath, json);
+            File.WriteAllText(outputFilePath, json);
 
-            Console.WriteLine($"Centroids saved to: {OutputFilePath}");
+            Console.WriteLine($"Centroids saved to: {outputFilePath}");
             Console.WriteLine("Done.");
 
             return 0;
@@ -144,6 +145,25 @@ public static class Program
             Console.Error.WriteLine(ex);
             return 1;
         }
+    }
+
+    private static string FindSolutionFolder()
+    {
+        const string solutionFileName = "Genova.MovieReviewClassifier.sln";
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+
+        while (directory != null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, solutionFileName)))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException(
+            $"Solution folder containing '{solutionFileName}' could not be found.");
     }
 
     private static float[] ComputeCentroid(IReadOnlyList<float[]> vectors, int embeddingSize)
